@@ -2,3 +2,7 @@
 \#*#
 ~*
 bench/bin
+bench/randombytes/jasmin_syscall.o
+bench/randombytes/librandombytes1.a
+bench/randombytes/randombytes1.o
+bench/results
