@@ -100,7 +100,7 @@ bin/mlkem-native-1024-avx2: randombytes/librandombytes1.a third_party/mlkem-nati
 third_party/mlkem-native/test/build/libmlkem768.a:
 	$(MAKE) -C third_party/mlkem-native/ OPT=1 AUTO=1 func_768
 
- third_party/mlkem-native/test/build/libmlkem1024.a:
+third_party/mlkem-native/test/build/libmlkem1024.a:
 	$(MAKE) -C third_party/mlkem-native/ OPT=1 AUTO=1 func_1024
 
 #-- randombytes -----------------------------------------------------
@@ -113,5 +113,6 @@ clean:
 	$(RM) -f bin/formosa-mlkem-*
 	$(RM) -f bin/mlkem-native-*
 	$(RM) -f bin/pqcp-mlkem-*
+	$(RM) -rf $(RESULTS_DIR)
 	$(MAKE) -C randombytes/ clean
 	$(MAKE) -C third_party/mlkem-native clean
