@@ -18,14 +18,14 @@
 int PQCP_MLKEM_NATIVE_MLKEM768_keypair_derand(
   uint8_t *public_key,
   uint8_t *secret_key,
-  uint8_t *coins
+  const uint8_t *coins
 );
 
 int PQCP_MLKEM_NATIVE_MLKEM768_enc_derand(
   uint8_t *ciphertext,
   uint8_t *shared_secret,
   const uint8_t *public_key,
-  uint8_t *coins
+  const uint8_t *coins
 );
 
 int PQCP_MLKEM_NATIVE_MLKEM768_keypair(
