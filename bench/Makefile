@@ -13,12 +13,14 @@ CFLAGS ?= \
 	-Wno-long-long \
 	-Wno-unknown-pragmas \
 	-O3 \
+	-g \
 	-fomit-frame-pointer \
 	-std=c99 \
 	-pedantic
 
 BENCH_MAIN := src/bench.c
 RESULTS_DIR := results
+PERF ?= perf
 
 ALL := \
 	bin/formosa-mlkem-768-avx2 \
@@ -36,6 +38,16 @@ run: compile
 	@./bin/formosa-mlkem-1024-avx2 > $(RESULTS_DIR)/formosa_1024.txt
 	@./bin/mlkem-native-768-avx2 > $(RESULTS_DIR)/native_768.txt
 	@./bin/mlkem-native-1024-avx2 > $(RESULTS_DIR)/native_1024.txt
+
+perf: run
+	$(PERF) record -o $(RESULTS_DIR)/formosa_768.data \
+		taskset -c 0 ./bin/formosa-mlkem-768-avx2 > /dev/null
+	$(PERF) record -o $(RESULTS_DIR)/formosa_1024.data \
+		taskset -c 0 ./bin/formosa-mlkem-1024-avx2 > /dev/null
+	$(PERF) record -o $(RESULTS_DIR)/native_768.data \
+		taskset -c 0 ./bin/mlkem-native-768-avx2 > /dev/null
+	$(PERF) record -o $(RESULTS_DIR)/native_1024.data \
+		taskset -c 0 ./bin/mlkem-native-1024-avx2 > /dev/null
 
 bin/formosa-mlkem-768-avx2: randombytes/librandombytes1.a
 	[ -d bin ] || mkdir bin
