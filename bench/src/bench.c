@@ -1,3 +1,10 @@
+/* Benchmarks for the KEM API.
+
+   We benchmark each operation separately.
+   For each operation, we run WARMUP iterations without recording cycles, then
+   we run TIMES iterations of ITERS iterations each, recording the average
+   cycles per iteration for each of the TIMES runs.
+*/
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -45,7 +52,7 @@ static void error(const char *operation, const char *message) {
 }
 
 static int init_coins(uint8_t *coins, size_t n) {
-  size_t clen = aligned_alloc_step(n);
+  size_t clen = alalloc_step(n);
   uint8_t *c = coins;
   int r = 0;
 
@@ -64,9 +71,9 @@ static int init_coins(uint8_t *coins, size_t n) {
 //     sec: output buffer for RUNS aligned secret keys.
 // Results:
 //     zero means success, nonzero means failure.
-static int bench_keypair(uint64_t times[RUNS], uint8_t *pub, uint8_t *sec) {
-  size_t plen = aligned_alloc_step(CRYPTO_PUBLICKEYBYTES);
-  size_t slen = aligned_alloc_step(CRYPTO_SECRETKEYBYTES);
+static int bench_keypair(uint64_t times[TIMES], uint8_t *pub, uint8_t *sec) {
+  size_t plen = alalloc_step(CRYPTO_PUBLICKEYBYTES);
+  size_t slen = alalloc_step(CRYPTO_SECRETKEYBYTES);
   int r = 0;
 
   uint8_t *p = pub;
@@ -79,12 +86,14 @@ static int bench_keypair(uint64_t times[RUNS], uint8_t *pub, uint8_t *sec) {
 
   p = pub;
   s = sec;
-  for (size_t i = 0; i < RUNS; i++) {
+  for (size_t i = 0; i < TIMES; i++) {
     uint64_t t = cpucycles();
-    r |= crypto_kem_keypair(p, s);
-    times[i] = cpucycles() - t;
-    p += plen;
-    s += slen;
+    for (size_t j = 0; j < ITERS; j++) {
+      r |= crypto_kem_keypair(p, s);
+      p += plen;
+      s += slen;
+    }
+    times[i] = (cpucycles() - t) / ITERS;
   }
 
   return r;
@@ -98,11 +107,11 @@ static int bench_keypair(uint64_t times[RUNS], uint8_t *pub, uint8_t *sec) {
 //     coins: input buffer with RUNS aligned coin blocks.
 // Results:
 //     zero means success, nonzero means failure.
-static int bench_keypair_derand(uint64_t times[RUNS], uint8_t *pub,
+static int bench_keypair_derand(uint64_t times[TIMES], uint8_t *pub,
                                 uint8_t *sec, uint8_t *coins) {
-  size_t plen = aligned_alloc_step(CRYPTO_PUBLICKEYBYTES);
-  size_t slen = aligned_alloc_step(CRYPTO_SECRETKEYBYTES);
-  size_t clen = aligned_alloc_step(CRYPTO_KEYPAIRCOINBYTES);
+  size_t plen = alalloc_step(CRYPTO_PUBLICKEYBYTES);
+  size_t slen = alalloc_step(CRYPTO_SECRETKEYBYTES);
+  size_t clen = alalloc_step(CRYPTO_KEYPAIRCOINBYTES);
   int r = 0;
 
   uint8_t *p = pub;
@@ -118,13 +127,15 @@ static int bench_keypair_derand(uint64_t times[RUNS], uint8_t *pub,
   p = pub;
   s = sec;
   c = coins;
-  for (size_t i = 0; i < RUNS; i++) {
+  for (size_t i = 0; i < TIMES; i++) {
     uint64_t t = cpucycles();
-    r |= crypto_kem_keypair_derand(p, s, c);
-    times[i] = cpucycles() - t;
-    p += plen;
-    s += slen;
-    c += clen;
+    for (size_t j = 0; j < ITERS; j++) {
+      r |= crypto_kem_keypair_derand(p, s, c);
+      p += plen;
+      s += slen;
+      c += clen;
+    }
+    times[i] = (cpucycles() - t) / ITERS;
   }
 
   return r;
@@ -138,11 +149,11 @@ static int bench_keypair_derand(uint64_t times[RUNS], uint8_t *pub,
 //     pub: input buffer for RUNS aligned public keys.
 // Results:
 //     zero means success, nonzero means failure.
-static int bench_enc(uint64_t times[RUNS], uint8_t *ct, uint8_t *key,
+static int bench_enc(uint64_t times[TIMES], uint8_t *ct, uint8_t *key,
                      uint8_t *pub) {
-  size_t clen = aligned_alloc_step(CRYPTO_CIPHERTEXTBYTES);
-  size_t klen = aligned_alloc_step(CRYPTO_BYTES);
-  size_t plen = aligned_alloc_step(CRYPTO_PUBLICKEYBYTES);
+  size_t clen = alalloc_step(CRYPTO_CIPHERTEXTBYTES);
+  size_t klen = alalloc_step(CRYPTO_BYTES);
+  size_t plen = alalloc_step(CRYPTO_PUBLICKEYBYTES);
   int r = 0;
 
   uint8_t *c = ct;
@@ -158,13 +169,15 @@ static int bench_enc(uint64_t times[RUNS], uint8_t *ct, uint8_t *key,
   c = ct;
   k = key;
   p = pub;
-  for (size_t i = 0; i < RUNS; i++) {
+  for (size_t i = 0; i < TIMES; i++) {
     uint64_t t = cpucycles();
-    r |= crypto_kem_enc(c, k, p);
-    times[i] = cpucycles() - t;
-    c += clen;
-    k += klen;
-    p += plen;
+    for (size_t j = 0; j < ITERS; j++) {
+      r |= crypto_kem_enc(c, k, p);
+      c += clen;
+      k += klen;
+      p += plen;
+    }
+    times[i] = (cpucycles() - t) / ITERS;
   }
 
   return r;
@@ -179,12 +192,12 @@ static int bench_enc(uint64_t times[RUNS], uint8_t *ct, uint8_t *key,
 //     coins: input buffer with RUNS aligned coin blocks.
 // Results:
 //     zero means success, nonzero means failure.
-static int bench_enc_derand(uint64_t times[RUNS], uint8_t *ct, uint8_t *key,
+static int bench_enc_derand(uint64_t times[TIMES], uint8_t *ct, uint8_t *key,
                             uint8_t *pub, uint8_t *coins) {
-  size_t ctlen = aligned_alloc_step(CRYPTO_CIPHERTEXTBYTES);
-  size_t klen = aligned_alloc_step(CRYPTO_BYTES);
-  size_t plen = aligned_alloc_step(CRYPTO_PUBLICKEYBYTES);
-  size_t clen = aligned_alloc_step(CRYPTO_ENCCOINBYTES);
+  size_t ctlen = alalloc_step(CRYPTO_CIPHERTEXTBYTES);
+  size_t klen = alalloc_step(CRYPTO_BYTES);
+  size_t plen = alalloc_step(CRYPTO_PUBLICKEYBYTES);
+  size_t clen = alalloc_step(CRYPTO_ENCCOINBYTES);
   int r = 0;
 
   uint8_t *ctp = ct;
@@ -203,14 +216,16 @@ static int bench_enc_derand(uint64_t times[RUNS], uint8_t *ct, uint8_t *key,
   k = key;
   p = pub;
   c = coins;
-  for (size_t i = 0; i < RUNS; i++) {
+  for (size_t i = 0; i < TIMES; i++) {
     uint64_t t = cpucycles();
-    r |= crypto_kem_enc_derand(ctp, k, p, c);
-    times[i] = cpucycles() - t;
-    ctp += ctlen;
-    k += klen;
-    p += plen;
-    c += clen;
+    for (size_t j = 0; j < ITERS; j++) {
+      r |= crypto_kem_enc_derand(ctp, k, p, c);
+      ctp += ctlen;
+      k += klen;
+      p += plen;
+      c += clen;
+    }
+    times[i] = (cpucycles() - t) / ITERS;
   }
 
   return r;
@@ -224,11 +239,11 @@ static int bench_enc_derand(uint64_t times[RUNS], uint8_t *ct, uint8_t *key,
 //     sec: input buffer for RUNS aligned secret keys.
 // Results:
 //     zero means success, nonzero means failure.
-static int bench_dec(uint64_t times[RUNS], uint8_t *key, uint8_t *ct,
+static int bench_dec(uint64_t times[TIMES], uint8_t *key, uint8_t *ct,
                      uint8_t *sec) {
-  size_t klen = aligned_alloc_step(CRYPTO_BYTES);
-  size_t clen = aligned_alloc_step(CRYPTO_CIPHERTEXTBYTES);
-  size_t slen = aligned_alloc_step(CRYPTO_SECRETKEYBYTES);
+  size_t klen = alalloc_step(CRYPTO_BYTES);
+  size_t clen = alalloc_step(CRYPTO_CIPHERTEXTBYTES);
+  size_t slen = alalloc_step(CRYPTO_SECRETKEYBYTES);
   int r = 0;
 
   uint8_t *k = key;
@@ -244,22 +259,24 @@ static int bench_dec(uint64_t times[RUNS], uint8_t *key, uint8_t *ct,
   k = key;
   c = ct;
   s = sec;
-  for (size_t i = 0; i < RUNS; i++) {
+  for (size_t i = 0; i < TIMES; i++) {
     uint64_t t = cpucycles();
-    r |= crypto_kem_dec(k, c, s);
-    times[i] = cpucycles() - t;
-    k += klen;
-    c += clen;
-    s += slen;
+    for (size_t j = 0; j < ITERS; j++) {
+      r |= crypto_kem_dec(k, c, s);
+      k += klen;
+      c += clen;
+      s += slen;
+    }
+    times[i] = (cpucycles() - t) / ITERS;
   }
 
   return r;
 }
 
-static void print_timings(uint64_t times[OPS][RUNS]) {
+static void print_timings(uint64_t times[OPS][TIMES]) {
   for (size_t op = 0; op < OPS; op++) {
     printf("%s\n", OP_NAMES[op]);
-    for (size_t i = 0; i < RUNS; i++) {
+    for (size_t i = 0; i < TIMES; i++) {
       printf("%" PRIu64 "\n", times[op][i]);
     }
     printf("\n");
@@ -267,35 +284,35 @@ static void print_timings(uint64_t times[OPS][RUNS]) {
 }
 
 int main(void) {
-  uint64_t times[OPS][RUNS];
+  uint64_t times[OPS][TIMES];
 
   uint8_t *_pub = NULL;
-  uint8_t *pub = aligned_alloc(&_pub, RUNS, CRYPTO_PUBLICKEYBYTES);
+  uint8_t *pub = alalloc(&_pub, RUNS, CRYPTO_PUBLICKEYBYTES);
   if (pub == NULL || _pub == NULL)
     error("main", "failed to allocate pub");
 
   uint8_t *_sec = NULL;
-  uint8_t *sec = aligned_alloc(&_sec, RUNS, CRYPTO_SECRETKEYBYTES);
+  uint8_t *sec = alalloc(&_sec, RUNS, CRYPTO_SECRETKEYBYTES);
   if (sec == NULL || _sec == NULL)
     error("main", "failed to allocate sec");
 
   uint8_t *_ct = NULL;
-  uint8_t *ct = aligned_alloc(&_ct, RUNS, CRYPTO_CIPHERTEXTBYTES);
+  uint8_t *ct = alalloc(&_ct, RUNS, CRYPTO_CIPHERTEXTBYTES);
   if (ct == NULL || _ct == NULL)
     error("main", "failed to allocate ct");
 
   uint8_t *_key = NULL;
-  uint8_t *key = aligned_alloc(&_key, RUNS, CRYPTO_BYTES);
+  uint8_t *key = alalloc(&_key, RUNS, CRYPTO_BYTES);
   if (key == NULL || _key == NULL)
     error("main", "failed to allocate key");
 
   uint8_t *_coins_kg = NULL;
-  uint8_t *coins_kg = aligned_alloc(&_coins_kg, RUNS, CRYPTO_KEYPAIRCOINBYTES);
+  uint8_t *coins_kg = alalloc(&_coins_kg, RUNS, CRYPTO_KEYPAIRCOINBYTES);
   if (coins_kg == NULL || _coins_kg == NULL)
     error("main", "failed to allocate coins");
 
   uint8_t *_coins_enc = NULL;
-  uint8_t *coins_enc = aligned_alloc(&_coins_enc, RUNS, CRYPTO_ENCCOINBYTES);
+  uint8_t *coins_enc = alalloc(&_coins_enc, RUNS, CRYPTO_ENCCOINBYTES);
   if (coins_enc == NULL || _coins_enc == NULL)
     error("main", "failed to allocate coins");
 

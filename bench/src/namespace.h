@@ -7,13 +7,14 @@
 
 // https://stackoverflow.com/a/55243651/248065
 #define MY_TRUTHY_VALUE_X 1
-#define CAT(x,y) CAT_(x,y)
-#define CAT_(x,y) x##y
-#define HAS_NAMESPACE(x) CAT(CAT(MY_TRUTHY_VALUE_,CAT(JADE_NAMESPACE,CAT(_,x))),X)
+#define CAT(x, y) CAT_(x, y)
+#define CAT_(x, y) x##y
+#define HAS_NAMESPACE(x)                                                       \
+  CAT(CAT(MY_TRUTHY_VALUE_, CAT(JADE_NAMESPACE, CAT(_, x))), X)
 
 #if !HAS_NAMESPACE(API_H)
 #error "namespace not properly defined for header guard"
 #endif
 
-#define xstr(s,e) str(s)#e
+#define xstr(s, e) str(s) #e
 #define str(s) #s
